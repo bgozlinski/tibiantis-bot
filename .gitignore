@@ -1,0 +1,49 @@
+
+# Virtual environment
+venv/
+.venv/
+
+# Python cache
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pyc
+
+# IDE / system
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Env files
+app/db/.env
+
+# Docker
+*.log
+*.pid
+
+# Byte-compiled / optimized / DLL files
+*.so
+
+# Alembic
+alembic/versions/*.py
+
+# Pytest cache
+.pytest_cache/
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# MyPy / coverage / test reports
+.mypy_cache/
+.coverage
+htmlcov/
+.tox/
+
+# Databases
+*.db
+
+# ENV
+.env
+.env_temp
