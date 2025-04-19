@@ -12,7 +12,7 @@ class CharacterRepository:
     
     def get_all(self) -> List[Character]:
         """Get all characters"""
-        return self.db.query(Character).all()
+        return self.db.query(Character).all()  # type: ignore
     
     def get_by_id(self, character_id: int) -> Optional[Character]:
         """Get character by ID"""
