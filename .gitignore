@@ -27,7 +27,6 @@ app/db/.env
 *.so
 
 # Alembic
-alembic/versions/*.py
 
 # Pytest cache
 .pytest_cache/
