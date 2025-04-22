@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, DateTime
+from sqlalchemy import Column, Integer, String, DateTime, Text
 from app.db.models.base import Base
 
 
@@ -15,4 +15,6 @@ class Character(Base):
     house = Column(String, nullable=True)
     guild_membership = Column(String, nullable=True)
     last_login = Column(DateTime, nullable=True)
+    comment = Column(Text, nullable=True)
+    account_status = Column(String, nullable=True)
     last_seen_location = Column(String, nullable=True)

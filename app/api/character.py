@@ -1,7 +1,6 @@
 from typing import List
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-
 from app.db.dependecies import get_db
 from app.db.schemas.character import CharacterCreate, CharacterOut
 from app.repositories.character_repository import CharacterRepository
@@ -56,18 +55,25 @@ async def add_character(
         tracking_data = CharacterCreate(name="Karius", last_seen_location="Thais")
         tracked_character = repo.add_character_to_tracking(tracking_data)
     """
-
-
-
     repository = CharacterRepository(db)
-    
+
+    # Sprawdź czy postać już istnieje
     if repository.exists_by_name(character_data.name):
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, 
+            status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Character with name: {character_data.name} already exists"
         )
-    
-    return repository.add_by_name(character_data)
+
+    # Pobierz i zapisz postać używając repozytorium
+    try:
+        character = repository.add_by_name(character_data)
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Could not retrieve character data from Tibiantis Online: {str(e)}"
+        )
+
+    return character
 
 
 @router.get("/info/{character_name}")

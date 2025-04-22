@@ -1,8 +1,9 @@
 from sqlalchemy.orm import Session
 from typing import List, Optional
-
 from app.db.models.character import Character
 from app.db.schemas.character import CharacterCreate
+from app.scrapers.tibiantis_scraper import TibiantisScraper
+
 
 class CharacterRepository:
     """
@@ -94,9 +95,16 @@ class CharacterRepository:
         Raises:
             HTTPException: If a character is already being tracked (400)
         """
+        scraper = TibiantisScraper()
+        scraped_data = scraper.get_character_data(character_data.name)
+        print(scraped_data)
 
-        character = Character(**character_data.model_dump())
-        
+        if scraped_data:
+            full_character_data = {**character_data.model_dump(), **scraped_data} # dictionary unpacking
+            character = Character(**full_character_data)
+        else:
+            character = Character(**character_data.model_dump())
+
         self.db.add(character)
         self.db.commit()
         self.db.refresh(character)
