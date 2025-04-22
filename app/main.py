@@ -9,4 +9,4 @@ async def index():
     return {"ping": "pong"}
 
 
-app.include_router(character.router, prefix="/ch", tags=["Characters"])
+app.include_router(character.router, prefix="/character", tags=["Characters"])

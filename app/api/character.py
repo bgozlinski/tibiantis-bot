@@ -6,10 +6,12 @@ from app.db.dependecies import get_db
 from app.db.schemas.character import CharacterCreate, CharacterOut
 from app.repositories.character_repository import CharacterRepository
 
+from app.scrapers.tibiantis_scraper import TibiantisScraper
+
 router = APIRouter()
 
 @router.get("/", response_model=List[CharacterOut])
-def get_characters(
+async def get_characters(
         db: Session = Depends(get_db)
 ):
     """Get all characters"""
@@ -18,7 +20,7 @@ def get_characters(
 
 
 @router.get("/{character_id}", response_model=CharacterOut)
-def get_character(
+async def get_character(
         character_id: int,
         db: Session = Depends(get_db)
 ):
@@ -36,11 +38,27 @@ def get_character(
 
 
 @router.post("/", response_model=CharacterOut, status_code=status.HTTP_201_CREATED)
-def create_character(
+async def add_character(
         character_data: CharacterCreate,
         db: Session = Depends(get_db)
 ):
-    """Create a new character"""
+    """
+    Add an existing character to a tracking database.
+
+    Parameters:
+        character_data (CharacterCreate): Character data schema instance
+
+    Returns:
+        Character: Tracked character entity
+
+    Example:
+        repo = CharacterRepository(db_session)
+        tracking_data = CharacterCreate(name="Karius", last_seen_location="Thais")
+        tracked_character = repo.add_character_to_tracking(tracking_data)
+    """
+
+
+
     repository = CharacterRepository(db)
     
     if repository.exists_by_name(character_data.name):
@@ -49,6 +67,20 @@ def create_character(
             detail=f"Character with name: {character_data.name} already exists"
         )
     
-    return repository.create(character_data)
+    return repository.add_by_name(character_data)
+
+
+@router.get("/info/{character_name}")
+async def get_character_info(character_name: str):
+    scraper = TibiantisScraper()
+    character_data = scraper.get_character_data(character_name)
+    if character_data is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Character with name: {character_name} not found"
+        )
+    return character_data
+
+
 
 
