@@ -98,15 +98,21 @@ class TibiantisScraper:
                     field_name = fields_to_scrape[key]
 
                     if field_name == 'last_login':
+                        tzinfos = {
+                            "CEST": 7200,   # UTC+2
+                            "CET": 3600     # UTC+1
+                        }
+
                         try:
-                            parsed_date = parser.parse(value)
+                            parsed_date = parser.parse(value, tzinfos=tzinfos)
                             value = datetime(
                                 parsed_date.year,
                                 parsed_date.month,
                                 parsed_date.day,
                                 parsed_date.hour,
                                 parsed_date.minute,
-                                parsed_date.second
+                                parsed_date.second,
+                                tzinfo=None
                             )
                         except (ValueError, TypeError):
                             logger.warning(f"Could not parse last_login date: {value}")
