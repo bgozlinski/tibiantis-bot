@@ -28,17 +28,8 @@ app/db/.env
 
 # Alembic
 
-# Pytest cache
-.pytest_cache/
-
 # Jupyter Notebook checkpoints
 .ipynb_checkpoints/
-
-# MyPy / coverage / test reports
-.mypy_cache/
-.coverage
-htmlcov/
-.tox/
 
 # Databases
 *.db
@@ -46,3 +37,5 @@ htmlcov/
 # ENV
 .env
 .env_temp
+
+.junie
