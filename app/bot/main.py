@@ -1,17 +1,20 @@
 import discord
+import logging
 
 from app.bot.client import Client
 from app.bot.config import DISCORD_BOT_TOKEN
+
+logger = logging.getLogger(__name__)
 
 
 async def run_bot():
     client = Client()
 
     try:
-        print("Starting bot...")
+        logger.info("Starting Discord bot...")
         await client.start(DISCORD_BOT_TOKEN)
     except discord.LoginFailure:
-        print("Failed to login. Please check your token.")
+        logger.error("Failed to login to Discord. Please check your token.")
     except Exception as e:
-        print(f"An error occurred while running the bot: {e}")
+        logger.exception(f"An error occurred while running the Discord bot: {e}")
         raise e

@@ -1,12 +1,15 @@
 import discord
+import logging
 from discord.ext import commands
 from app.bot.config import DISCORD_CHANNEL_ID
 from app.bot.commands import say_hello
 
+logger = logging.getLogger(__name__)
+
 
 class Client(commands.Bot):
     def __init__(self):
-        print("Initializing bot...")
+        logger.info("Initializing Discord bot...")
         super().__init__(
             command_prefix="!",
             intents=discord.Intents.all(),
@@ -15,21 +18,23 @@ class Client(commands.Bot):
         self.allowed_channel_id = DISCORD_CHANNEL_ID
 
     async def setup_hook(self):
-        print("Setting up bot...")
+        logger.info("Setting up Discord bot...")
         try:
             self.tree.add_command(say_hello)
 
-            print("Syncing commands...")
+            logger.info("Syncing Discord commands...")
             synced = await self.tree.sync()  # Global sync
-            print(f"Successfully synchronized {len(synced)} command(s)")
-            print(f"Synchronized commands: {[cmd.name for cmd in synced]}")
+            logger.info(f"Successfully synchronized {len(synced)} command(s)")
+            logger.debug(f"Synchronized commands: {[cmd.name for cmd in synced]}")
 
         except Exception as e:
-            print(f"Error during synchronization: {e}")
+            logger.error(f"Error during Discord command synchronization: {e}", exc_info=True)
 
     async def on_ready(self):
-        print(f"Bot logged in as {self.user} (ID: {self.user.id})")
-        print(f"Bot is present in {len(self.guilds)} server(s):")
+        logger.info(f"Discord bot logged in as {self.user} (ID: {self.user.id})")
+        logger.info(f"Discord bot is present in {len(self.guilds)} server(s)")
+
         for guild in self.guilds:
-            print(f"- {guild.name} (ID: {guild.id})")
-        print(f"Bot will only respond in channel ID: {self.allowed_channel_id}")
+            logger.debug(f"- {guild.name} (ID: {guild.id})")
+
+        logger.info(f"Discord bot will only respond in channel ID: {self.allowed_channel_id}")

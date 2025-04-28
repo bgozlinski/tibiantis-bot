@@ -58,11 +58,16 @@ class TibiantisScraper:
                 scraper = TibiantisScraper()
                 return scraper.get_character_data("Karius")
         """
+        logger.info(f"Scraping character data for: {character_name}")
 
         try:
             search_url = f"{self.base_url}?page=character&name={character_name}"
+            logger.debug(f"Requesting URL: {search_url}")
+
             response = requests.get(search_url)
             response.raise_for_status()
+            logger.debug(f"Received response with status code: {response.status_code}")
+
             soup = BeautifulSoup(response.text, "html.parser")
 
             character_data = {}
@@ -103,6 +108,7 @@ class TibiantisScraper:
                             "CET": 3600     # UTC+1
                         }
 
+                        logger.debug(f"Parsing last_login date: {value}")
                         try:
                             parsed_date = parser.parse(value, tzinfos=tzinfos)
                             value = datetime(
@@ -114,21 +120,29 @@ class TibiantisScraper:
                                 parsed_date.second,
                                 tzinfo=None
                             )
-                        except (ValueError, TypeError):
-                            logger.warning(f"Could not parse last_login date: {value}")
+                            logger.debug(f"Successfully parsed last_login date: {value}")
+                        except (ValueError, TypeError) as e:
+                            logger.warning(f"Could not parse last_login date: {value}. Error: {e}")
                             value = None
 
                     elif field_name == 'level':
+                        logger.debug(f"Parsing level value: {value}")
                         try:
                             value = int(value)
-                        except (ValueError, TypeError):
+                            logger.debug(f"Successfully parsed level: {value}")
+                        except (ValueError, TypeError) as e:
+                            logger.warning(f"Could not parse level value: {value}. Error: {e}")
                             value = None
 
                     character_data[field_name] = value
 
+            logger.info(f"Successfully scraped data for character: {character_name}")
+            logger.debug(f"Scraped fields: {list(character_data.keys())}")
             return character_data
 
         except requests.RequestException as e:
-            logger.error(f"Error fetching data for {character_name}: {e}")
+            logger.error(f"Error fetching data for {character_name}: {e}", exc_info=True)
             return None
-
+        except Exception as e:
+            logger.error(f"Unexpected error while scraping data for {character_name}: {e}", exc_info=True)
+            return None

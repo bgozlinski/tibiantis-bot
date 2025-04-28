@@ -23,6 +23,9 @@ app/db/.env
 *.log
 *.pid
 
+# Logs
+logs/
+
 # Byte-compiled / optimized / DLL files
 *.so
 

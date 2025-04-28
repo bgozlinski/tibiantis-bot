@@ -1,8 +1,11 @@
+import logging
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from app.db.models.character import Character
 from app.db.schemas.character import CharacterCreate
 from app.scrapers.tibiantis_scraper import TibiantisScraper
+
+logger = logging.getLogger(__name__)
 
 
 class CharacterRepository:
@@ -32,7 +35,7 @@ class CharacterRepository:
         """
 
         self.db = db
-    
+
     def get_all(self) -> List[Character]:
         """
         Retrieve all characters from the database.
@@ -46,7 +49,7 @@ class CharacterRepository:
         """
 
         return self.db.query(Character).all()  # type: ignore
-    
+
     def get_by_id(self, character_id: int) -> Optional[Character]:
         """
         Retrieve a character by their ID.
@@ -63,7 +66,7 @@ class CharacterRepository:
         """
 
         return self.db.query(Character).filter(Character.id == character_id).first()
-    
+
     def exists_by_name(self, name: str) -> bool:
         """
         Check if a character with the given name exists.
@@ -80,7 +83,7 @@ class CharacterRepository:
         """
 
         return self.db.query(Character).filter(Character.name == name).first() is not None
-    
+
     def add_by_name(self, character_data: CharacterCreate) -> Character:
         """
         Start tracking an existing Tibiantis Online character.
@@ -96,17 +99,26 @@ class CharacterRepository:
             HTTPException: If a character is already being tracked (400)
         """
         scraper = TibiantisScraper()
+        logger.info(f"Fetching character data for: {character_data.name}")
         scraped_data = scraper.get_character_data(character_data.name)
-        print(scraped_data)
+        logger.debug(f"Scraped data for {character_data.name}: {scraped_data}")
 
         if scraped_data:
+            logger.info(f"Creating character with scraped data: {character_data.name}")
             full_character_data = {**character_data.model_dump(), **scraped_data} # dictionary unpacking
             character = Character(**full_character_data)
         else:
+            logger.warning(f"No scraped data found for character: {character_data.name}. Creating with minimal data.")
             character = Character(**character_data.model_dump())
 
-        self.db.add(character)
-        self.db.commit()
-        self.db.refresh(character)
-        
+        try:
+            self.db.add(character)
+            self.db.commit()
+            self.db.refresh(character)
+            logger.info(f"Successfully added character to database: {character.name} (ID: {character.id})")
+        except Exception as e:
+            logger.error(f"Error adding character to database: {e}", exc_info=True)
+            self.db.rollback()
+            raise
+
         return character
