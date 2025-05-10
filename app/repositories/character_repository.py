@@ -2,7 +2,7 @@ import logging
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from app.db.models.character import Character
-from app.db.schemas.character import CharacterCreate
+from app.db.schemas.character import CharacterAdd
 from app.scrapers.tibiantis_scraper import TibiantisScraper
 
 logger = logging.getLogger(__name__)
@@ -89,13 +89,18 @@ class CharacterRepository:
         Start tracking an existing Tibiantis Online character.
 
         Parameters:
-            character_name (CharacterCreate): Data of the character to track
+            character_name (str): Name of the character to track
 
         Returns:
-            CharacterOut: Data of the character that is now being tracked
+            Character: Data of the character that is now being tracked
 
         Raises:
+            ValueError: If the character does not exist on Tibiantis server
             Exception: If there's an error in adding the character to the database
+
+        Example:
+            repo = CharacterRepository(db_session)
+            character = repo.add_by_name("Karius")
         """
         scraper = TibiantisScraper()
         logger.info(f"Fetching character data for: {character_name}")
@@ -106,7 +111,7 @@ class CharacterRepository:
             logger.warning(f"No scraped data found for character: {character_name}. Cannot add non-existent character.")
             raise ValueError(f"Character '{character_name}' does not exist on Tibiantis server")
 
-        character_data = CharacterCreate(name=character_name)
+        character_data = CharacterAdd(name=character_name)
         full_character_data = {**character_data.model_dump(), **scraped_data}
         character = Character(**full_character_data)
 
@@ -123,7 +128,22 @@ class CharacterRepository:
         return character
 
     def delete_character_by_id(self, character_id: int):
-        """Delete a character by ID"""
+        """
+        Delete a character by ID.
+
+        Parameters:
+            character_id (int): The ID of the character to delete
+
+        Returns:
+            dict: A dictionary with a detail message confirming deletion
+
+        Raises:
+            Exception: If there's an error in deleting the character from the database
+
+        Example:
+            repo = CharacterRepository(db_session)
+            result = repo.delete_character_by_id(1)
+        """
         character = self.get_by_id(character_id)
         logger.info(f"Deleting character: {character.name} (ID: {character.id})")
 
