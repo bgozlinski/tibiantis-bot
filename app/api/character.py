@@ -2,7 +2,7 @@ from typing import List
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from app.db.dependecies import get_db
-from app.db.schemas.character import CharacterCreate, CharacterOut
+from app.db.schemas.character import CharacterAdd, CharacterOut
 from app.repositories.character_repository import CharacterRepository
 
 from app.scrapers.tibiantis_scraper import TibiantisScraper
@@ -38,7 +38,7 @@ async def get_character(
 
 @router.post("/", response_model=CharacterOut, status_code=status.HTTP_201_CREATED)
 async def add_character(
-        character_data: CharacterCreate,
+        character_data: CharacterAdd,
         db: Session = Depends(get_db)
 ):
     """

@@ -21,10 +21,10 @@ class CharacterBase(BaseModel):
         from_attributes = True
 
 
-
-class CharacterCreate(BaseModel):
+class CharacterAdd(BaseModel):
     name: str
     last_seen_location: Optional[str] = None
+
 
 class CharacterOut(CharacterBase):
     id: int
