@@ -31,12 +31,13 @@ async def get_character(
 
     Parameters:
         character_id (int): The ID of the character to retrieve
+        db (Session): SQLAlchemy database session object
 
     Returns:
         CharacterOut: Character data
 
     Raises:
-        HTTPException: If character with specified ID is not found
+        HTTPException: If a character with specified ID is not found
     """
     repository = CharacterRepository(db)
     character = repository.get_by_id(character_id)

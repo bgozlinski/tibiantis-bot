@@ -161,7 +161,8 @@ class CharacterRepository:
     def update_character_by_id(
             self,
             character_id: int,
-            update_data: dict) ->Optional[Character]:
+            update_data: dict
+    ) ->Optional[Character]:
         """
         Update a character by ID with the provided data.
 
