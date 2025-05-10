@@ -22,7 +22,7 @@ class CharacterBase(BaseModel):
 
 
 
-class CharacterCreate(CharacterBase):
+class CharacterCreate(BaseModel):
     name: str
     last_seen_location: Optional[str] = None
 
