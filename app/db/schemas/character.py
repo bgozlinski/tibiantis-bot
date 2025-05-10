@@ -31,4 +31,5 @@ class CharacterOut(CharacterBase):
 
 
 class CharacterUpdate(BaseModel):
-    name: str
+    name: Optional[str] = None
+    last_seen_location: Optional[str] = None

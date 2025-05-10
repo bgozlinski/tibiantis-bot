@@ -158,26 +158,47 @@ class CharacterRepository:
         return {"detail": f"Deleted character: {character.name} (ID: {character.id})"}
 
 
-    def update_character_name_by_id(self, character_id: int, new_name: str) ->Optional[Character]:
+    def update_character_by_id(
+            self,
+            character_id: int,
+            update_data: dict) ->Optional[Character]:
+        """
+        Update a character by ID with the provided data.
+
+        Parameters:
+            character_id (int): The ID of the character to update
+            update_data (dict): Dictionary containing the fields to update
+
+        Returns:
+            Optional[Character]: Updated character entity or None if not found
+
+        Raises:
+            Exception: If there's an error in updating the character in the database
+
+        Example:
+            repo = CharacterRepository(db_session)
+            update_data = {"name": "NewName", "last_seen_location": "Thais"}
+            updated_character = repo.update_character_by_id(1, update_data)
+        """
+
         character = self.get_by_id(character_id)
 
         if not character:
             return None
 
-        logger.info(f"Updating character name: {character.name} (ID: {character.id}) to {new_name}")
+        logger.info(f"Updating character name: {character.name} (ID: {character.id}) to {update_data}")
 
-        character.name = new_name
+        for key, value in update_data.items():
+            if hasattr(character, key) and value is not None:
+                setattr(character, key, value)
 
         try:
             self.db.commit()
             self.db.refresh(character)
             logger.info(f"Successfully updated character: {character.name} (ID: {character.id})")
         except Exception as e:
-            logger.error(f"Error updating character name in database: {e}", exc_info=True)
+            logger.error(f"Error updating character in database: {e}", exc_info=True)
             self.db.rollback()
             raise
 
         return character
-
-
-
