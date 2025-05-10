@@ -64,7 +64,7 @@ async def add_character(
         )
 
     try:
-        character = repository.add_by_name(character_data)
+        character = repository.add_by_name(character_data.name)
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
