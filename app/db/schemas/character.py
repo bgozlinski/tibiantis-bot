@@ -28,3 +28,7 @@ class CharacterAdd(BaseModel):
 
 class CharacterOut(CharacterBase):
     id: int
+
+
+class CharacterUpdate(BaseModel):
+    name: str

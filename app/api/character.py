@@ -2,7 +2,7 @@ from typing import List
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from app.db.dependecies import get_db
-from app.db.schemas.character import CharacterAdd, CharacterOut
+from app.db.schemas.character import CharacterAdd, CharacterOut, CharacterUpdate
 from app.repositories.character_repository import CharacterRepository
 
 from app.scrapers.tibiantis_scraper import TibiantisScraper
@@ -102,6 +102,32 @@ async def get_character_info(character_name: str):
             detail=f"Character with name: {character_name} not found"
         )
     return character_data
+
+
+@router.patch("/{character_id}", response_model=CharacterOut)
+async def update_character(
+        character_id: int,
+        character_data: CharacterUpdate,
+        db: Session = Depends(get_db)
+):
+    repository = CharacterRepository(db)
+
+    if not repository.get_by_id(character_id):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Character with id: {character_id} not found"
+        )
+
+    try:
+        character = repository.update_character_name_by_id(character_id, character_data.name)
+        return character
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Could not update character name: {str(e)}"
+        )
+
+
 
 
 

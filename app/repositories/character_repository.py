@@ -152,9 +152,32 @@ class CharacterRepository:
             self.db.commit()
             logger.info(f"Successfully deleted character: {character.name} (ID: {character.id})")
         except Exception as e:
-            logger.error(f"Error deleting character from datavase: {e}", exc_info=True)
+            logger.error(f"Error deleting character from database: {e}", exc_info=True)
             raise
 
         return {"detail": f"Deleted character: {character.name} (ID: {character.id})"}
+
+
+    def update_character_name_by_id(self, character_id: int, new_name: str) ->Optional[Character]:
+        character = self.get_by_id(character_id)
+
+        if not character:
+            return None
+
+        logger.info(f"Updating character name: {character.name} (ID: {character.id}) to {new_name}")
+
+        character.name = new_name
+
+        try:
+            self.db.commit()
+            self.db.refresh(character)
+            logger.info(f"Successfully updated character: {character.name} (ID: {character.id})")
+        except Exception as e:
+            logger.error(f"Error updating character name in database: {e}", exc_info=True)
+            self.db.rollback()
+            raise
+
+        return character
+
 
 
