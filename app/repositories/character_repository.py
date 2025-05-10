@@ -84,32 +84,31 @@ class CharacterRepository:
 
         return self.db.query(Character).filter(Character.name == name).first() is not None
 
-    def add_by_name(self, character_data: CharacterCreate) -> Character:
+    def add_by_name(self, character_name: str) -> Character:
         """
         Start tracking an existing Tibiantis Online character.
 
         Parameters:
-            character_data (CharacterCreate): Data of the character to track
-            db (Session): Database session dependency
+            character_name (CharacterCreate): Data of the character to track
 
         Returns:
             CharacterOut: Data of the character that is now being tracked
 
         Raises:
-            HTTPException: If a character is already being tracked (400)
+            Exception: If there's an error in adding the character to the database
         """
         scraper = TibiantisScraper()
-        logger.info(f"Fetching character data for: {character_data.name}")
-        scraped_data = scraper.get_character_data(character_data.name)
-        logger.debug(f"Scraped data for {character_data.name}: {scraped_data}")
+        logger.info(f"Fetching character data for: {character_name}")
+        scraped_data = scraper.get_character_data(character_name)
+        logger.debug(f"Scraped data for {character_name}: {scraped_data}")
 
-        if scraped_data:
-            logger.info(f"Creating character with scraped data: {character_data.name}")
-            full_character_data = {**character_data.model_dump(), **scraped_data} # dictionary unpacking
-            character = Character(**full_character_data)
-        else:
-            logger.warning(f"No scraped data found for character: {character_data.name}. Creating with minimal data.")
-            character = Character(**character_data.model_dump())
+        if not scraped_data:
+            logger.warning(f"No scraped data found for character: {character_name}. Cannot add non-existent character.")
+            raise ValueError(f"Character '{character_name}' does not exist on Tibiantis server")
+
+        character_data = CharacterCreate(name=character_name)
+        full_character_data = {**character_data.model_dump(), **scraped_data}
+        character = Character(**full_character_data)
 
         try:
             self.db.add(character)
