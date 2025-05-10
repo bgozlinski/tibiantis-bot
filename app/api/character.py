@@ -60,13 +60,14 @@ async def add_character(
 
     Parameters:
         character_data (CharacterCreate): Character data schema instance
+        db (Session): SQLAlchemy database session object
 
     Returns:
         Character: Tracked character entity
 
     Example:
         repo = CharacterRepository(db_session)
-        tracking_data = CharacterCreate(name="Karius", last_seen_location="Thais")
+        tracking_data = CharacterCreate(name="John Doe", last_seen_location="Thais")
         tracked_character = repo.add_character_to_tracking(tracking_data)
     """
     repository = CharacterRepository(db)
@@ -97,6 +98,7 @@ async def delete_character(
 
     Parameters:
         character_id (int): The ID of the character to delete
+        db (Session): SQLAlchemy database session object
 
     Raises:
         HTTPException: If a character with specified ID is not found
@@ -162,7 +164,7 @@ async def update_character(
         CharacterOut: Updated character data
 
     Raises:
-        HTTPException: If a character with specified ID is not found or update fails
+        HTTPException: If a character with specified ID is not found, or update fails
     """
     repository = CharacterRepository(db)
 
