@@ -57,14 +57,12 @@ async def add_character(
     """
     repository = CharacterRepository(db)
 
-    # Sprawdź czy postać już istnieje
     if repository.exists_by_name(character_data.name):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Character with name: {character_data.name} already exists"
         )
 
-    # Pobierz i zapisz postać używając repozytorium
     try:
         character = repository.add_by_name(character_data)
     except Exception as e:
