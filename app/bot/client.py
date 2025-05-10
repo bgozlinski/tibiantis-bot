@@ -2,7 +2,7 @@ import discord
 import logging
 from discord.ext import commands
 from app.bot.config import DISCORD_CHANNEL_ID
-from app.bot.commands import say_hello
+from app.bot.commands import say_hello, add_character
 
 logger = logging.getLogger(__name__)
 
@@ -21,6 +21,7 @@ class Client(commands.Bot):
         logger.info("Setting up Discord bot...")
         try:
             self.tree.add_command(say_hello)
+            self.tree.add_command(add_character)
 
             logger.info("Syncing Discord commands...")
             synced = await self.tree.sync()  # Global sync
