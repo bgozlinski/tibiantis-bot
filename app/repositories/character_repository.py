@@ -122,3 +122,20 @@ class CharacterRepository:
             raise
 
         return character
+
+    def delete_character_by_id(self, character_id: int):
+        """Delete a character by ID"""
+        character = self.get_by_id(character_id)
+        logger.info(f"Deleting character: {character.name} (ID: {character.id})")
+
+        try:
+            self.db.delete(character)
+            self.db.commit()
+            logger.info(f"Successfully deleted character: {character.name} (ID: {character.id})")
+        except Exception as e:
+            logger.error(f"Error deleting character from datavase: {e}", exc_info=True)
+            raise
+
+        return {"detail": f"Deleted character: {character.name} (ID: {character.id})"}
+
+

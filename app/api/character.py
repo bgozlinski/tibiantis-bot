@@ -73,6 +73,24 @@ async def add_character(
 
     return character
 
+@router.delete("/{character_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_character(
+        character_id: int,
+        db: Session = Depends(get_db)
+):
+    """Delete a character by ID"""
+    repository = CharacterRepository(db)
+    character = repository.get_by_id(character_id)
+
+    if not character:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Character not found"
+        )
+
+    repository.delete_character_by_id(character_id)
+
+
 
 @router.get("/info/{character_name}")
 async def get_character_info(character_name: str):
