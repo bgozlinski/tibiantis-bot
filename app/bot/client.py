@@ -2,7 +2,10 @@ import discord
 import logging
 from discord.ext import commands
 from app.bot.config import DISCORD_CHANNEL_ID
-from app.bot.commands import say_hello, add_character
+from app.bot.commands.add_character import add_character
+from app.bot.commands.hello import say_hello
+from app.bot.commands.delete_character import delete_character
+from app.bot.commands.update_character import change_name
 
 logger = logging.getLogger(__name__)
 
@@ -22,6 +25,8 @@ class Client(commands.Bot):
         try:
             self.tree.add_command(say_hello)
             self.tree.add_command(add_character)
+            self.tree.add_command(delete_character)
+            self.tree.add_command(change_name)
 
             logger.info("Syncing Discord commands...")
             synced = await self.tree.sync()  # Global sync

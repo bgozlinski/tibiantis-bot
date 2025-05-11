@@ -21,7 +21,7 @@ class CharacterRepository:
     Example:
         def create_new_character(db_session: Session):
             repo = CharacterRepository(db_session)
-            new_character = CharacterCreate(name="Karius", last_seen_location="Thais")
+            new_character = CharacterCreate(name="Joe Doe", last_seen_location="Thais")
             character = repo.create(new_character)
             return character
     """
@@ -100,7 +100,7 @@ class CharacterRepository:
 
         Example:
             repo = CharacterRepository(db_session)
-            character = repo.add_by_name("Karius")
+            character = repo.add_by_name("Joe Doe")
         """
         scraper = TibiantisScraper()
         logger.info(f"Fetching character data for: {character_name}")
@@ -157,6 +157,42 @@ class CharacterRepository:
 
         return {"detail": f"Deleted character: {character.name} (ID: {character.id})"}
 
+    def delete_character_by_name(self, character_name: str):
+        """
+        Delete a character by name.
+
+        Parameters:
+            character_name (str): The name of the character to delete
+
+        Returns:
+            dict: A dictionary with a detail message confirming deletion
+
+        Raises:
+            ValueError: If the character doesn't exist
+            Exception: If there's an error in deleting the character from the database
+
+        Example:
+            repo = CharacterRepository(db_session)
+            result = repo.delete_character_by_name("Joe Doe")
+        """
+        character = self.db.query(Character).filter(Character.name == character_name).first()
+
+        if not character:
+            logger.warning(f"Character with name: {character_name} not found in database.")
+            raise ValueError(f"Character '{character_name}' does not exist in database.")
+
+        logger.info(f"Deleting character: {character.name} (ID: {character.id})")
+
+        try:
+            self.db.delete(character)
+            self.db.commit()
+            logger.info(f"Successfully deleted character: {character.name} (ID: {character.id})")
+        except Exception as e:
+            logger.error(f"Error deleting character from database: {e}", exc_info=True)
+            self.db.rollback()
+            raise
+
+        return {"detail": f"Deleted character: {character.name} (ID: {character.id})"}
 
     def update_character_by_id(
             self,
@@ -203,3 +239,28 @@ class CharacterRepository:
             raise
 
         return character
+
+    def change_character_name(self, character_old_name: str, character_new_name: str):
+        character = self.db.query(Character).filter(Character.name == character_old_name).first()
+
+        if not character:
+            logger.warning(f"Character with name: {character_old_name} not found in database.")
+            raise ValueError(f"Character '{character_old_name}' does not exist in database.")
+
+        scraper = TibiantisScraper()
+        scraped_data = scraper.get_character_data(character_new_name)
+
+        if not scraped_data:
+            logger.warning(f"Character with name: {character_new_name} not found on Tibiantis server.")
+            raise ValueError(f"Character '{character_new_name}' does not exist on Tibiantis server")
+
+        logger.info(f"Changing character name: {character.name} to {character_new_name}")
+        character.name = character_new_name
+
+        try:
+            self.db.commit()
+            logger.info(f"Successfully changed character name: {character.name} (ID: {character.id})")
+        except Exception as e:
+            logger.error(f"Error changing character name in database: {e}", exc_info=True)
+            self.db.rollback()
+            raise
