@@ -4,7 +4,7 @@ from discord import app_commands
 @app_commands.command(name="change_name", description="Changes a character name from tracking database")
 async def change_name(interaction: discord.Interaction, old_name: str, new_name: str):
 
-    await interaction.response.defer(thinking=True)
+    await interaction.response.defer(thinking=True, ephemeral=True)
 
     from app.db.session import SessionLocal
     from app.repositories.character_repository import CharacterRepository
