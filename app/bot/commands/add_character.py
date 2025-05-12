@@ -11,7 +11,7 @@ async def add_character(interaction: discord.Interaction, character_name: str):
         character_name (str): The name of the character to add
     """
 
-    await interaction.response.defer(thinking=True)
+    await interaction.response.defer(thinking=True, ephemeral=True)
 
     from app.db.session import SessionLocal
     from app.repositories.character_repository import CharacterRepository
