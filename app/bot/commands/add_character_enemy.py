@@ -1,7 +1,5 @@
 import discord
 from discord import app_commands
-from app.bot.decorators import is_admin_or_moderator
-
 
 @app_commands.command(name="add_enemy", description="Adds a character to the enemy list")
 async def add_enemy(interaction: discord.Interaction, character_name: str, reason: str = None):
@@ -67,9 +65,8 @@ async def add_enemy(interaction: discord.Interaction, character_name: str, reaso
             ephemeral=True
         )
 
-        # Refresh the enemy table
-        if interaction.client.enemy_table_manager:
-            await interaction.client.enemy_table_manager.update_enemy_table()
+        from app.bot.enemy_table_manager import send_enemy_table
+        await send_enemy_table()
 
     except ValueError as e:
         await interaction.followup.send(

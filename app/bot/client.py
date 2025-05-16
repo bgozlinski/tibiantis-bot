@@ -8,9 +8,16 @@ from app.bot.config import DISCORD_CHANNEL_ID
 from app.bot.commands.add_character import add_character
 from app.bot.commands.delete_character import delete_character
 from app.bot.commands.update_character import change_name
-from app.bot.enemy_table_manager import EnemyTableManager
 
 logger = logging.getLogger(__name__)
+
+# Global bot instance
+_bot_instance = None
+
+
+def get_bot_instance():
+    """Returns the global bot instance"""
+    return _bot_instance
 
 
 class Client(commands.Bot):
@@ -23,6 +30,10 @@ class Client(commands.Bot):
         )
         self.allowed_channel_id = DISCORD_CHANNEL_ID
 
+        # Set the global bot instance
+        global _bot_instance
+        _bot_instance = self
+
     async def setup_hook(self):
         logger.info("Setting up Discord bot...")
         try:
@@ -31,6 +42,11 @@ class Client(commands.Bot):
             self.tree.add_command(change_name)
             self.tree.add_command(add_enemy)
             self.tree.add_command(remove_enemy)
+
+            # Initialize death checker task
+            from app.bot.tasks.death_checker_task import DeathCheckerTask
+            self.death_checker = DeathCheckerTask(self)
+            logger.info("Death checker task initialized")
 
             logger.info("Syncing Discord commands...")
             synced = await self.tree.sync()  # Global sync
@@ -44,5 +60,6 @@ class Client(commands.Bot):
         logger.info(f"Discord bot logged in as {self.user} (ID: {self.user.id})")
         logger.info(f"Discord bot is present in {len(self.guilds)} server(s)")
 
-        self.enemy_table_manager = EnemyTableManager(self)
-        await self.enemy_table_manager.start()
+        # Send initial enemy table
+        from app.bot.enemy_table_manager import send_enemy_table
+        await send_enemy_table()

@@ -28,7 +28,7 @@ class TibiantisScraper:
     """
 
     def __init__(self):
-        """Initialize scraper instance with base URL."""
+        """Initialize a scraper instance with base URL."""
         self.base_url = "https://tibiantis.online/"
 
     def get_character_data(self, character_name: str) -> Optional[Dict]:
@@ -193,4 +193,115 @@ class TibiantisScraper:
             return []
         except Exception as e:
             logger.error(f"Unexpected error while scraping data for online players: {e}", exc_info=True)
+            return []
+
+    def get_character_deaths(self, character_name: str) -> List[Dict]:
+        """
+        Retrieve character death information from Tibiantis Online.
+
+        Parameters:
+            character_name (str): Name of the character to check
+
+        Returns:
+            List[Dict]: List of death entries, each containing:
+                - time (datetime): When the death occurred
+                - killer (str): Name of the killer
+
+        """
+
+        logger.info(f"Scraping death data for: {character_name}")
+
+        try:
+            search_url = f"{self.base_url}?page=character&name={character_name}"
+            response = requests.get(search_url)
+            response.raise_for_status()
+
+            soup = BeautifulSoup(response.text, "html.parser")
+
+            table = soup.find_all("table", class_="tabi")[1:]
+            if not "Latest Deaths" in table[0].text:
+                logger.info(f"No death information found for character: {character_name}")
+                return []
+
+            deaths_list = []
+            rows = table[0].find_all("tr")[1:]
+
+            for row in rows:
+                cols = row.find_all("td")
+                time_str  = cols[0].text.strip()
+                killer_str = cols[1].text.strip()
+
+                # Parse the date
+                try:
+                    tzinfos = {"CEST": 7200, "CET": 3600}
+                    time = parser.parse(time_str, tzinfos=tzinfos)
+                except (ValueError, TypeError):
+                    time = None
+
+                deaths_list.append({
+                    "time": time,
+                    "killer": killer_str,
+                })
+
+            return deaths_list
+
+        except Exception as e:
+            logger.error(f"Error fetching death data for {character_name}: {e}", exc_info=True)
+            return []
+
+    async def get_character_deaths_async(self, character_name: str) -> List[Dict]:
+        """
+        Asynchronous version of get_character_deaths.
+        Retrieve character death information from Tibiantis Online.
+
+        Parameters:
+            character_name (str): Name of the character to check
+
+        Returns:
+            List[Dict]: List of death entries, each containing:
+                - time (datetime): When the death occurred
+                - killer (str): Name of the killer
+        """
+        import httpx
+
+        logger.info(f"Asynchronously scraping death data for: {character_name}")
+
+        try:
+            search_url = f"{self.base_url}?page=character&name={character_name}"
+
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                response = await client.get(search_url)
+                response.raise_for_status()
+
+            soup = BeautifulSoup(response.text, "html.parser")
+
+            tables = soup.find_all("table", class_="tabi")
+            if len(tables) < 2 or not "Latest Deaths" in tables[1].text:
+                logger.info(f"No death information found for character: {character_name}")
+                return []
+
+            deaths_list = []
+            rows = tables[1].find_all("tr")[1:]
+
+            for row in rows:
+                cols = row.find_all("td")
+                time_str = cols[0].text.strip()
+                killer_str = cols[1].text.strip()
+
+                # Parse the date
+                try:
+                    tzinfos = {"CEST": 7200, "CET": 3600}
+                    time = parser.parse(time_str, tzinfos=tzinfos)
+                except (ValueError, TypeError):
+                    time = None
+
+                deaths_list.append({
+                    "time": time,
+                    "killer": killer_str,
+                })
+
+            return deaths_list
+
+        except Exception as e:
+            logger.error(f"Error fetching death data for {character_name}: {e}", exc_info=True)
             return []

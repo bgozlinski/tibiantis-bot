@@ -184,6 +184,11 @@ class CharacterRepository:
         logger.info(f"Deleting character: {character.name} (ID: {character.id})")
 
         try:
+            # First, explicitly delete any enemy records for this character
+            from app.db.models.enemy_character import EnemyCharacter
+            self.db.query(EnemyCharacter).filter(EnemyCharacter.character_id == character.id).delete()
+
+            # Then delete the character
             self.db.delete(character)
             self.db.commit()
             logger.info(f"Successfully deleted character: {character.name} (ID: {character.id})")
@@ -286,3 +291,15 @@ class CharacterRepository:
         except Exception as e:
             logger.error(f"Error getting character by name {name}: {e}", exc_info=True)
             return None
+
+    def get_high_level_characters(self, min_level: int = 30) -> List[Character]:
+        """
+        Retrieve characters with level >= min_level from the database.
+
+        Parameters:
+            min_level (int): Minimum level threshold
+
+        Returns:
+            List[Character]: List of Character entities with level >= min_level
+        """
+        return self.db.query(Character).filter(Character.level >= min_level).all()

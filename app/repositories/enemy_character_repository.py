@@ -180,6 +180,10 @@ class EnemyCharacterRepository:
         character = self.character_repository.get_by_id(enemy_character.character_id)
         logger.info(f"Updating enemy character for {character.name if character else enemy_character.character_id}.")
 
+        # Remove character_id from update_data to prevent NULL values
+        if 'character_id' in update_data:
+            del update_data['character_id']
+
         for key, value in update_data.items():
             if hasattr(enemy_character, key) and value is not None:
                 setattr(enemy_character, key, value)
@@ -187,7 +191,8 @@ class EnemyCharacterRepository:
         try:
             self.db.commit()
             self.db.refresh(enemy_character)
-            logger.info(f"Successfully updated enemy character for {character.name if character else enemy_character.character_id}.")
+            logger.info(
+                f"Successfully updated enemy character for {character.name if character else enemy_character.character_id}.")
         except Exception as e:
             logger.error(f"Error updating enemy character in database: {e}", exc_info=True)
             self.db.rollback()

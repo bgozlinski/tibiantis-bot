@@ -2,7 +2,6 @@ import discord
 from discord import app_commands
 from app.bot.decorators import is_admin_or_moderator
 
-
 @app_commands.command(name="remove_enemy", description="Removes a character from the enemy list")
 @is_admin_or_moderator()
 async def remove_enemy(interaction: discord.Interaction, character_name: str):
@@ -53,9 +52,8 @@ async def remove_enemy(interaction: discord.Interaction, character_name: str):
             ephemeral=True
         )
 
-        # Refresh the enemy table
-        if interaction.client.enemy_table_manager:
-            await interaction.client.enemy_table_manager.update_enemy_table()
+        from app.bot.enemy_table_manager import send_enemy_table
+        await send_enemy_table()
 
     except ValueError as e:
         await interaction.followup.send(
