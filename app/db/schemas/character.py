@@ -15,7 +15,6 @@ class CharacterBase(BaseModel):
     last_login: Optional[datetime] = None
     comment: Optional[str] = None
     account_status: Optional[str] = None
-    last_seen_location: Optional[str] = None
 
     class Config:
         from_attributes = True
@@ -23,7 +22,6 @@ class CharacterBase(BaseModel):
 
 class CharacterAdd(BaseModel):
     name: str
-    last_seen_location: Optional[str] = None
 
 
 class CharacterOut(CharacterBase):
@@ -32,4 +30,3 @@ class CharacterOut(CharacterBase):
 
 class CharacterUpdate(BaseModel):
     name: Optional[str] = None
-    last_seen_location: Optional[str] = None

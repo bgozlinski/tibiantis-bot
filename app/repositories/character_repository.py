@@ -264,3 +264,25 @@ class CharacterRepository:
             logger.error(f"Error changing character name in database: {e}", exc_info=True)
             self.db.rollback()
             raise
+
+    def get_by_name(self, name: str):
+        """
+        Get a character by name from the database.
+
+        Parameters:
+            name (str): The name of the character to retrieve
+
+        Returns:
+            Optional[Character]: Character entity or None if not found
+        """
+        logger.info(f"Getting character by name: {name}")
+        try:
+            character = self.db.query(Character).filter(Character.name == name).first()
+            if character:
+                logger.info(f"Found character with name: {name}")
+            else:
+                logger.info(f"No character found with name: {name}")
+            return character
+        except Exception as e:
+            logger.error(f"Error getting character by name {name}: {e}", exc_info=True)
+            return None

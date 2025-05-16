@@ -1,5 +1,6 @@
-from sqlalchemy import Column, Integer, String, DateTime, Text
+from sqlalchemy import Column, Integer, String, DateTime, Text, Boolean
 from app.db.models.base import Base
+from datetime import datetime, UTC
 
 
 class Character(Base):
@@ -17,4 +18,5 @@ class Character(Base):
     last_login = Column(DateTime, nullable=True)
     comment = Column(Text, nullable=True)
     account_status = Column(String, nullable=True)
-    last_seen_location = Column(String, nullable=True)
+    created_at = Column(DateTime, default=datetime.now(UTC))
+    updated_at = Column(DateTime, default=datetime.now(UTC), onupdate=datetime.now(UTC))

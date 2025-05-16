@@ -1,6 +1,8 @@
 import discord
 import logging
 from discord.ext import commands
+
+from app.bot.commands.add_character_enemy import add_enemy
 from app.bot.config import DISCORD_CHANNEL_ID
 from app.bot.commands.add_character import add_character
 from app.bot.commands.delete_character import delete_character
@@ -25,6 +27,7 @@ class Client(commands.Bot):
             self.tree.add_command(add_character)
             self.tree.add_command(delete_character)
             self.tree.add_command(change_name)
+            self.tree.add_command(add_enemy)
 
             logger.info("Syncing Discord commands...")
             synced = await self.tree.sync()  # Global sync
