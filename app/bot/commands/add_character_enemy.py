@@ -66,7 +66,9 @@ async def add_enemy(interaction: discord.Interaction, character_name: str, reaso
         )
 
         from app.bot.enemy_table_manager import send_enemy_table
-        await send_enemy_table()
+        # Check if reason contains "dead" (case-insensitive)
+        has_dead = reason and "dead" in reason.lower()
+        await send_enemy_table(new_enemy_with_dead=has_dead)
 
     except ValueError as e:
         await interaction.followup.send(

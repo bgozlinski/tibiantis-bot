@@ -53,7 +53,7 @@ async def remove_enemy(interaction: discord.Interaction, character_name: str):
         )
 
         from app.bot.enemy_table_manager import send_enemy_table
-        await send_enemy_table()
+        await send_enemy_table(new_enemy_with_dead=False)
 
     except ValueError as e:
         await interaction.followup.send(

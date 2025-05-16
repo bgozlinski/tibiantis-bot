@@ -30,3 +30,6 @@ class CharacterOut(CharacterBase):
 
 class CharacterUpdate(BaseModel):
     name: Optional[str] = None
+    level: Optional[int] = None
+    vocation: Optional[str] = None
+    last_login: Optional[datetime] = None

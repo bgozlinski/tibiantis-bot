@@ -285,7 +285,7 @@ class TibiantisScraper(BaseScraper):
         try:
             search_url = f"{self.base_url}?page=character&name={character_name}"
 
-            async with httpx.AsyncClient(timeout=30.0) as client:
+            async with httpx.AsyncClient(timeout=30.0, verify=False) as client:
                 response = await client.get(search_url)
                 response.raise_for_status()
 

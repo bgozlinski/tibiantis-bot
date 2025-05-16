@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 async def refresh_character_death_and_update_table():
     async with asyncio.Lock():
         try:
-            async with httpx.AsyncClient() as client:
+            async with httpx.AsyncClient(verify=False) as client:
                 characters_response = await client.get(f"{API_URL}/character/")
                 characters = characters_response.json()
                 enemies_response = await client.get(f"{API_URL}/enemy/")
@@ -65,14 +65,18 @@ async def refresh_character_death_and_update_table():
                             # Process the enemy death data as needed
 
                     # Update the character table or perform other operations
-                await send_enemy_table()
+                await send_enemy_table(new_enemy_with_dead=False)
 
         except Exception as e:
             logger.error(f"Error refreshing character deaths: {e}", exc_info=True)
 
 
-async def send_enemy_table():
-    """Send a formatted table of enemy characters to the Discord channel"""
+async def send_enemy_table(new_enemy_with_dead=False):
+    """Send a formatted table of enemy characters to the Discord channel
+
+    Parameters:
+        new_enemy_with_dead (bool): If True, mentions @everyone in the message
+    """
     try:
         from app.bot.client import get_bot_instance
         bot = get_bot_instance()
@@ -99,7 +103,7 @@ async def send_enemy_table():
             # Continue with sending the new message even if deletion fails
 
         # Get enemy data
-        async with httpx.AsyncClient() as client:
+        async with httpx.AsyncClient(verify=False) as client:
             characters_response = await client.get(f"{API_URL}/character/")
             characters = characters_response.json()
             enemies_response = await client.get(f"{API_URL}/enemy/")
@@ -117,10 +121,11 @@ async def send_enemy_table():
                 character_info = {
                     "id": character["id"],
                     "name": character["name"],
-                    "level": character.get("level", "Unknown"),
-                    "vocation": character.get("vocation", "Unknown"),
+                    "level": character.get("level", "-"),
+                    "vocation": character.get("vocation", "-"),
                     "reason": enemy_reasons.get(character["id"], "-"),
-                    "added_by": enemy_added_by.get(character["id"], "Unknown")
+                    "added_by": enemy_added_by.get(character["id"], "-"),
+                    "last_login": character.get("last_login", "-") or "-"
                 }
                 enemy_characters.append(character_info)
 
@@ -128,24 +133,25 @@ async def send_enemy_table():
         enemy_characters.sort(key=lambda x: x["level"] if isinstance(x["level"], int) else 0, reverse=True)
 
         # Format the message
-        message = "📊 **ENEMY CHARACTERS LIST** 📊\n\n"
+        message = "@everyone 📊 **ENEMY CHARACTERS LIST** 📊\n\n" if new_enemy_with_dead else "📊 **ENEMY CHARACTERS LIST** 📊\n\n"
 
         if not enemy_characters:
             message += "No enemy characters currently tracked."
         else:
             # Add table header
             message += "```\n"
-            message += f"{'Name':<20} {'Level':<6} {'Vocation':<12} {'Reason':<30}\n"
-            message += "-" * 70 + "\n"
+            message += f"{'Name':<20} {'Level':<6} {'Vocation':<12} {'Last Login':<20} {'Reason':<30}\n"
+            message += "-" * 75 + "\n"
 
             # Add table rows
             for enemy in enemy_characters:
                 name = enemy["name"][:19]
                 level = str(enemy["level"])[:5]
                 vocation = str(enemy["vocation"])[:11]
+                last_login = str(enemy["last_login"])[:19].replace("T", " ")
                 reason = str(enemy["reason"] or "No reason provided")[:29]
 
-                message += f"{name:<20} {level:<6} {vocation:<12} {reason:<30}\n"
+                message += f"{name:<20} {level:<6} {vocation:<12} {last_login:<20} {reason:<30}\n"
 
             message += "```"
 
@@ -159,4 +165,4 @@ async def send_enemy_table():
 
 def update_character_table():
     """Legacy function - now calls the async version"""
-    asyncio.create_task(send_enemy_table())
+    asyncio.create_task(send_enemy_table(new_enemy_with_dead=False))

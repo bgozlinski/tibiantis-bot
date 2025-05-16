@@ -48,6 +48,11 @@ class Client(commands.Bot):
             self.death_checker = DeathCheckerTask(self)
             logger.info("Death checker task initialized")
 
+            # Initialize enemy scraper task
+            from app.bot.tasks.enemy_scraper_task import EnemyScraperTask
+            self.enemy_scraper = EnemyScraperTask(self)
+            logger.info("Enemy scraper task initialized")
+
             logger.info("Syncing Discord commands...")
             synced = await self.tree.sync()  # Global sync
             logger.info(f"Successfully synchronized {len(synced)} command(s)")
@@ -62,4 +67,4 @@ class Client(commands.Bot):
 
         # Send initial enemy table
         from app.bot.enemy_table_manager import send_enemy_table
-        await send_enemy_table()
+        await send_enemy_table(new_enemy_with_dead=False)

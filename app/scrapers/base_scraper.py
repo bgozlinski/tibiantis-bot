@@ -26,7 +26,7 @@ class BaseScraper:
         """
         self.base_url = base_url
     
-    def make_request(self, url: str) -> Optional[requests.Response]:
+    def make_request(self, url: str,timeout: int = 10) -> Optional[requests.Response]:
         """
         Make an HTTP request to the specified URL.
         
