@@ -3,10 +3,12 @@ import logging
 from discord.ext import commands
 
 from app.bot.commands.add_character_enemy import add_enemy
+from app.bot.commands.remove_character_enemy import remove_enemy
 from app.bot.config import DISCORD_CHANNEL_ID
 from app.bot.commands.add_character import add_character
 from app.bot.commands.delete_character import delete_character
 from app.bot.commands.update_character import change_name
+from app.bot.enemy_table_manager import EnemyTableManager
 
 logger = logging.getLogger(__name__)
 
@@ -28,6 +30,7 @@ class Client(commands.Bot):
             self.tree.add_command(delete_character)
             self.tree.add_command(change_name)
             self.tree.add_command(add_enemy)
+            self.tree.add_command(remove_enemy)
 
             logger.info("Syncing Discord commands...")
             synced = await self.tree.sync()  # Global sync
@@ -40,3 +43,6 @@ class Client(commands.Bot):
     async def on_ready(self):
         logger.info(f"Discord bot logged in as {self.user} (ID: {self.user.id})")
         logger.info(f"Discord bot is present in {len(self.guilds)} server(s)")
+
+        self.enemy_table_manager = EnemyTableManager(self)
+        await self.enemy_table_manager.start()

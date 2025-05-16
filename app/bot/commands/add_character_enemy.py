@@ -67,6 +67,10 @@ async def add_enemy(interaction: discord.Interaction, character_name: str, reaso
             ephemeral=True
         )
 
+        # Refresh the enemy table
+        if interaction.client.enemy_table_manager:
+            await interaction.client.enemy_table_manager.update_enemy_table()
+
     except ValueError as e:
         await interaction.followup.send(
             f"❌ Error: {str(e)}",
