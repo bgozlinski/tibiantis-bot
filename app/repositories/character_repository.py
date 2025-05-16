@@ -1,14 +1,15 @@
 import logging
 from sqlalchemy.orm import Session
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 from app.db.models.character import Character
 from app.db.schemas.character import CharacterAdd
 from app.scrapers.tibiantis_scraper import TibiantisScraper
+from app.repositories.base_repository import BaseRepository
 
 logger = logging.getLogger(__name__)
 
 
-class CharacterRepository:
+class CharacterRepository(BaseRepository[Character]):
     """
     Repository class for managing Character entities in the database.
 
@@ -33,39 +34,7 @@ class CharacterRepository:
         Parameters:
             db (Session): SQLAlchemy database session
         """
-
-        self.db = db
-
-    def get_all(self) -> List[Character]:
-        """
-        Retrieve all characters from the database.
-
-        Returns:
-            List[Character]: List of all Character entities
-
-        Example:
-            repo = CharacterRepository(db_session)
-            all_characters = repo.get_all()
-        """
-
-        return self.db.query(Character).all()  # type: ignore
-
-    def get_by_id(self, character_id: int) -> Optional[Character]:
-        """
-        Retrieve a character by their ID.
-
-        Parameters:
-            character_id (int): The ID of the character to retrieve
-
-        Returns:
-            Optional[Character]: Found character entity or None if not found
-
-        Example:
-            repo = CharacterRepository(db_session)
-            character = repo.get_by_id(1)
-        """
-
-        return self.db.query(Character).filter(Character.id == character_id).first()
+        super().__init__(db, Character)
 
     def exists_by_name(self, name: str) -> bool:
         """
@@ -145,17 +114,16 @@ class CharacterRepository:
             result = repo.delete_character_by_id(1)
         """
         character = self.get_by_id(character_id)
-        logger.info(f"Deleting character: {character.name} (ID: {character.id})")
+        if not character:
+            return {"detail": f"Character with ID {character_id} not found"}
 
-        try:
-            self.db.delete(character)
-            self.db.commit()
-            logger.info(f"Successfully deleted character: {character.name} (ID: {character.id})")
-        except Exception as e:
-            logger.error(f"Error deleting character from database: {e}", exc_info=True)
-            raise
+        character_name = character.name
+        character_id_val = character.id
 
-        return {"detail": f"Deleted character: {character.name} (ID: {character.id})"}
+        if self.delete(character_id):
+            return {"detail": f"Deleted character: {character_name} (ID: {character_id_val})"}
+        else:
+            return {"detail": f"Failed to delete character: {character_name} (ID: {character_id_val})"}
 
     def delete_character_by_name(self, character_name: str):
         """
@@ -181,29 +149,29 @@ class CharacterRepository:
             logger.warning(f"Character with name: {character_name} not found in database.")
             raise ValueError(f"Character '{character_name}' does not exist in database.")
 
-        logger.info(f"Deleting character: {character.name} (ID: {character.id})")
+        character_id = character.id
+        character_name = character.name
 
         try:
             # First, explicitly delete any enemy records for this character
             from app.db.models.enemy_character import EnemyCharacter
-            self.db.query(EnemyCharacter).filter(EnemyCharacter.character_id == character.id).delete()
+            self.db.query(EnemyCharacter).filter(EnemyCharacter.character_id == character_id).delete()
 
-            # Then delete the character
-            self.db.delete(character)
-            self.db.commit()
-            logger.info(f"Successfully deleted character: {character.name} (ID: {character.id})")
+            # Then delete the character using the base class method
+            if self.delete(character_id):
+                return {"detail": f"Deleted character: {character_name} (ID: {character_id})"}
+            else:
+                return {"detail": f"Failed to delete character: {character_name} (ID: {character_id})"}
         except Exception as e:
             logger.error(f"Error deleting character from database: {e}", exc_info=True)
             self.db.rollback()
             raise
 
-        return {"detail": f"Deleted character: {character.name} (ID: {character.id})"}
-
     def update_character_by_id(
             self,
             character_id: int,
-            update_data: dict
-    ) ->Optional[Character]:
+            update_data: Dict[str, Any]
+    ) -> Optional[Character]:
         """
         Update a character by ID with the provided data.
 
@@ -222,28 +190,11 @@ class CharacterRepository:
             update_data = {"name": "NewName", "last_seen_location": "Thais"}
             updated_character = repo.update_character_by_id(1, update_data)
         """
-
         character = self.get_by_id(character_id)
+        if character:
+            logger.info(f"Updating character name: {character.name} (ID: {character.id}) to {update_data}")
 
-        if not character:
-            return None
-
-        logger.info(f"Updating character name: {character.name} (ID: {character.id}) to {update_data}")
-
-        for key, value in update_data.items():
-            if hasattr(character, key) and value is not None:
-                setattr(character, key, value)
-
-        try:
-            self.db.commit()
-            self.db.refresh(character)
-            logger.info(f"Successfully updated character: {character.name} (ID: {character.id})")
-        except Exception as e:
-            logger.error(f"Error updating character in database: {e}", exc_info=True)
-            self.db.rollback()
-            raise
-
-        return character
+        return self.update(character_id, update_data)
 
     def change_character_name(self, character_old_name: str, character_new_name: str):
         character = self.db.query(Character).filter(Character.name == character_old_name).first()

@@ -5,17 +5,18 @@ Tibiantis Online Scraper
 Module providing functionality for scraping data from Tibiantis Online server (https://tibiantis.online/).
 Allows retrieving information about player characters.
 """
-from typing import Optional, Dict, List
+from typing import Optional, Dict, List, Any
 import requests
 from bs4 import BeautifulSoup
 import logging
 from datetime import datetime
 from dateutil import parser
+from app.scrapers.base_scraper import BaseScraper
 
 logger = logging.getLogger(__name__)
 
 
-class TibiantisScraper:
+class TibiantisScraper(BaseScraper):
     """
     A class implementing scraping functionality for Tibiantis Online server.
 
@@ -29,7 +30,7 @@ class TibiantisScraper:
 
     def __init__(self):
         """Initialize a scraper instance with base URL."""
-        self.base_url = "https://tibiantis.online/"
+        super().__init__("https://tibiantis.online/")
 
     def get_character_data(self, character_name: str) -> Optional[Dict]:
         """
@@ -62,13 +63,10 @@ class TibiantisScraper:
 
         try:
             search_url = f"{self.base_url}?page=character&name={character_name}"
-            logger.debug(f"Requesting URL: {search_url}")
+            soup = self.scrape_page(search_url)
 
-            response = requests.get(search_url)
-            response.raise_for_status()
-            logger.debug(f"Received response with status code: {response.status_code}")
-
-            soup = BeautifulSoup(response.text, "html.parser")
+            if not soup:
+                return None
 
             character_data = {}
 
@@ -148,87 +146,83 @@ class TibiantisScraper:
             return None
 
     def get_online_players(self, min_level: int = 0) -> List[Dict]:
-        logger.info(f"Scraping online players with minimu level {min_level}")
-        try:
-            url = f"{self.base_url}?page=whoisonline"
-            logger.debug(f"Requesting URL: {url}")
+        """
+        Retrieve a list of online players from Tibiantis Online.
 
-            response = requests.get(url)
-            response.raise_for_status()
-            logger.debug(f"Received response with status code: {response.status_code}")
+        Parameters:
+            min_level (int): Minimum level threshold for filtering players
 
-            soup = BeautifulSoup(response.text, "html.parser")
-            table = soup.find("table", class_="tabi")
+        Returns:
+            List[Dict]: List of dictionaries containing player data
+        """
+        logger.info(f"Scraping online players with minimum level {min_level}")
 
-            if not table:
-                logger.warning("No data found for online players")
-                return []
+        url = f"{self.base_url}?page=whoisonline"
+        soup = self.scrape_page(url)
 
-            rows = table.find_all("tr")
-            if not rows:
-                logger.warning("No data found for online players")
-                return []
+        if not soup:
+            return []
 
-            online_players = []
-            rows = table.find_all("tr")[2:]
-            for row in rows:
-                cols = row.find_all("td")
-                try:
-                    name = cols[0].find("a").text.strip()
-                    level = int(cols[2].text.strip())
+        # Define extractors for the table columns
+        def extract_name(col):
+            return col.find("a").text.strip()
 
+        def extract_level(col):
+            return int(col.text.strip())
+
+        # Extract data from the table
+        online_players = []
+        table = soup.find("table", class_="tabi")
+
+        if not table:
+            logger.warning("No data found for online players")
+            return []
+
+        rows = table.find_all("tr")[2:]  # Skip header rows
+
+        for row in rows:
+            cols = row.find_all("td")
+            try:
+                name = extract_name(cols[0])
+                level = extract_level(cols[2])
+
+                if level >= min_level:
                     online_players.append({
                         "name": name,
                         "level": level
                     })
 
-                except (ValueError, IndexError) as e:
-                    logger.warning(f"Could not parse player data: {e}")
-                    continue
+            except (ValueError, IndexError) as e:
+                logger.warning(f"Could not parse player data: {e}")
+                continue
 
-            return online_players
+        return online_players
 
-        except requests.RequestException as e:
-            logger.error(f"Error fetching data for online players: {e}", exc_info=True)
-            return []
-        except Exception as e:
-            logger.error(f"Unexpected error while scraping data for online players: {e}", exc_info=True)
-            return []
-
-    def get_character_deaths(self, character_name: str) -> List[Dict]:
+    def _parse_death_data(self, soup: BeautifulSoup, character_name: str) -> List[Dict]:
         """
-        Retrieve character death information from Tibiantis Online.
+        Parse death data from a BeautifulSoup object.
 
         Parameters:
-            character_name (str): Name of the character to check
+            soup (BeautifulSoup): BeautifulSoup object containing the HTML
+            character_name (str): Name of the character
 
         Returns:
-            List[Dict]: List of death entries, each containing:
-                - time (datetime): When the death occurred
-                - killer (str): Name of the killer
-
+            List[Dict]: List of death entries
         """
-
-        logger.info(f"Scraping death data for: {character_name}")
-
         try:
-            search_url = f"{self.base_url}?page=character&name={character_name}"
-            response = requests.get(search_url)
-            response.raise_for_status()
+            tables = soup.find_all("table", class_="tabi")
 
-            soup = BeautifulSoup(response.text, "html.parser")
-
-            table = soup.find_all("table", class_="tabi")[1:]
-            if not "Latest Deaths" in table[0].text:
+            # Check if we have enough tables and if the second table contains death information
+            if len(tables) < 2 or "Latest Deaths" not in tables[1].text:
                 logger.info(f"No death information found for character: {character_name}")
                 return []
 
             deaths_list = []
-            rows = table[0].find_all("tr")[1:]
+            rows = tables[1].find_all("tr")[1:]  # Skip header row
 
             for row in rows:
                 cols = row.find_all("td")
-                time_str  = cols[0].text.strip()
+                time_str = cols[0].text.strip()
                 killer_str = cols[1].text.strip()
 
                 # Parse the date
@@ -246,8 +240,30 @@ class TibiantisScraper:
             return deaths_list
 
         except Exception as e:
-            logger.error(f"Error fetching death data for {character_name}: {e}", exc_info=True)
+            logger.error(f"Error parsing death data for {character_name}: {e}", exc_info=True)
             return []
+
+    def get_character_deaths(self, character_name: str) -> List[Dict]:
+        """
+        Retrieve character death information from Tibiantis Online.
+
+        Parameters:
+            character_name (str): Name of the character to check
+
+        Returns:
+            List[Dict]: List of death entries, each containing:
+                - time (datetime): When the death occurred
+                - killer (str): Name of the killer
+        """
+        logger.info(f"Scraping death data for: {character_name}")
+
+        search_url = f"{self.base_url}?page=character&name={character_name}"
+        soup = self.scrape_page(search_url)
+
+        if not soup:
+            return []
+
+        return self._parse_death_data(soup, character_name)
 
     async def get_character_deaths_async(self, character_name: str) -> List[Dict]:
         """
@@ -273,34 +289,12 @@ class TibiantisScraper:
                 response = await client.get(search_url)
                 response.raise_for_status()
 
-            soup = BeautifulSoup(response.text, "html.parser")
+            soup = self.parse_html(response.text)
 
-            tables = soup.find_all("table", class_="tabi")
-            if len(tables) < 2 or not "Latest Deaths" in tables[1].text:
-                logger.info(f"No death information found for character: {character_name}")
+            if not soup:
                 return []
 
-            deaths_list = []
-            rows = tables[1].find_all("tr")[1:]
-
-            for row in rows:
-                cols = row.find_all("td")
-                time_str = cols[0].text.strip()
-                killer_str = cols[1].text.strip()
-
-                # Parse the date
-                try:
-                    tzinfos = {"CEST": 7200, "CET": 3600}
-                    time = parser.parse(time_str, tzinfos=tzinfos)
-                except (ValueError, TypeError):
-                    time = None
-
-                deaths_list.append({
-                    "time": time,
-                    "killer": killer_str,
-                })
-
-            return deaths_list
+            return self._parse_death_data(soup, character_name)
 
         except Exception as e:
             logger.error(f"Error fetching death data for {character_name}: {e}", exc_info=True)

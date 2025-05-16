@@ -1,14 +1,15 @@
 import logging
 from sqlalchemy.orm import Session
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 from app.db.models.enemy_character import EnemyCharacter
 from app.db.models.character import Character
 from app.repositories.character_repository import CharacterRepository
+from app.repositories.base_repository import BaseRepository
 
 logger = logging.getLogger(__name__)
 
 
-class EnemyCharacterRepository:
+class EnemyCharacterRepository(BaseRepository[EnemyCharacter]):
     """
     Repository class for managing EnemyCharacter entities in the database.
     """
@@ -20,29 +21,8 @@ class EnemyCharacterRepository:
         Parameters:
             db (Session): SQLAlchemy database session
         """
-        self.db = db
+        super().__init__(db, EnemyCharacter)
         self.character_repository = CharacterRepository(db)
-
-    def get_all(self) -> List[EnemyCharacter]:
-        """
-        Retrieve all enemy characters from the database.
-
-        Returns:
-            List[EnemyCharacter]: List of all EnemyCharacter entities
-        """
-        return self.db.query(EnemyCharacter).all()
-
-    def get_by_id(self, enemy_id: int) -> Optional[EnemyCharacter]:
-        """
-        Retrieve an enemy character by ID.
-
-        Parameters:
-            enemy_id (int): The ID of the enemy character to retrieve
-
-        Returns:
-            Optional[EnemyCharacter]: Found enemy character entity or None if not found
-        """
-        return self.db.query(EnemyCharacter).filter(EnemyCharacter.id == enemy_id).first()
 
     def get_by_character_id(self, character_id: int) -> Optional[EnemyCharacter]:
         """
@@ -149,17 +129,9 @@ class EnemyCharacterRepository:
         character = self.character_repository.get_by_id(character_id)
         logger.info(f"Removing character {character.name if character else character_id} from enemy list.")
 
-        try:
-            self.db.delete(enemy_character)
-            self.db.commit()
-            logger.info(f"Successfully removed character {character.name if character else character_id} from enemy list.")
-            return True
-        except Exception as e:
-            logger.error(f"Error removing character from enemy list: {e}", exc_info=True)
-            self.db.rollback()
-            raise
+        return self.delete(enemy_character.id)
 
-    def update_enemy(self, enemy_id: int, update_data: dict) -> Optional[EnemyCharacter]:
+    def update_enemy(self, enemy_id: int, update_data: Dict[str, Any]) -> Optional[EnemyCharacter]:
         """
         Update an enemy character by ID with the provided data.
 
@@ -184,18 +156,4 @@ class EnemyCharacterRepository:
         if 'character_id' in update_data:
             del update_data['character_id']
 
-        for key, value in update_data.items():
-            if hasattr(enemy_character, key) and value is not None:
-                setattr(enemy_character, key, value)
-
-        try:
-            self.db.commit()
-            self.db.refresh(enemy_character)
-            logger.info(
-                f"Successfully updated enemy character for {character.name if character else enemy_character.character_id}.")
-        except Exception as e:
-            logger.error(f"Error updating enemy character in database: {e}", exc_info=True)
-            self.db.rollback()
-            raise
-
-        return enemy_character
+        return self.update(enemy_id, update_data)
